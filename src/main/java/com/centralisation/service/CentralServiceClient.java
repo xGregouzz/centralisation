@@ -1,5 +1,6 @@
 package com.centralisation.service;
 
+import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -13,11 +14,19 @@ import java.util.List;
 @FeignClient(name = "centralisation", url = "")
 public interface CentralServiceClient {
 
-    @Cacheable(value = "flights")
+    @Cacheable(value = "flight", key = "#id")
     @GetMapping("/flights/all")
     List<FlightDTO> getAllFlights();
 
-    @CacheEvict(value = "flights")
+    @Cacheable(value = "airport", key = "#id")
+    @GetMapping("/airports/all")
+    List<AirportDTO> getAllAirports();
+
+    @CacheEvict(value = "flight", key = "#id")
     @PostMapping("/flights/update")
-    void updateFlights(@RequestBody List<FlightDTO> flights);
+    List<FlightDTO> pushFlights(@RequestBody List<FlightDTO> flights);
+
+    @CacheEvict(value = "airport", key = "#id")
+    @PostMapping("/airports/update")
+    List<AirportDTO> pushAirports(@RequestBody List<AirportDTO> airports);
 }
