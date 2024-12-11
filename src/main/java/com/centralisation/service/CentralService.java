@@ -4,6 +4,7 @@ import com.centralisation.controller.CentralController;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,8 +17,16 @@ import java.util.List;
 public class CentralService {
 
     private final CentralController centralController;
-
     private final CacheManager cacheManager;
+
+    @Value("${api.groupe1}")
+    private String apiKeyGroupe1;
+    @Value("${api.groupe2}")
+    private String apiKeyGroupe2;
+    @Value("${api.groupe3}")
+    private String apiKeyGroupe3;
+    @Value("${api.groupe4}")
+    private String apiKeyGroupe4;
 
     /**
      * Retourne la liste des vols
