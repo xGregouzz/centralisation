@@ -6,6 +6,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AirportDTO {
-    private Long airportId;
-    private String airportName;
+    private String airportCode;
 }
