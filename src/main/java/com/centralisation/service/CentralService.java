@@ -1,8 +1,10 @@
 package com.centralisation.service;
 
+import com.centralisation.controller.CentralController;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -13,24 +15,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CentralService {
 
+    private final CentralController centralController;
+
+    private final CacheManager cacheManager;
+
     /**
      * Retourne la liste des vols
      *
      * @return la liste des vols
      */
-    @Cacheable(value = "flight", key = "#id")
+    @Cacheable(value = "flightCache")
     public List<FlightDTO> getAllFlights() {
-        // TODO
+        return (List<FlightDTO>) cacheManager.getCache("flightCache").get("flights").get();
     }
 
     /**
-     * Retourne la liste des aeroports
+     * Retourne la liste des aéroports
      *
      * @return la liste des aéroports
      */
-    @Cacheable(value = "airport", key = "#airportCode")
+    @Cacheable(value = "airportCache")
     public List<AirportDTO> getAllAirports() {
-        // TODO
+        return (List<AirportDTO>) cacheManager.getCache("airportCache").get("airports").get();
     }
 
     /**
@@ -38,10 +44,15 @@ public class CentralService {
      *
      * @return la liste des vols
      */
-
-    @CacheEvict(value = "flight", key = "#id")
+    @CacheEvict(value = "flightCache", allEntries = true)
     public List<FlightDTO> pushFlights(List<FlightDTO> flightDTOList) {
-        // TODO
+        cacheManager.getCache("flightCache").put("flights", flightDTOList);
+
+        for (FlightDTO flight : flightDTOList) {
+            centralController.sendSseEvent("apiKey-client", flight, "flightUpdate");
+        }
+
+        return flightDTOList;
     }
 
     /**
@@ -49,10 +60,14 @@ public class CentralService {
      *
      * @return la liste des aéroports
      */
+    @CacheEvict(value = "airportCache", allEntries = true)
+    public List<AirportDTO> pushAirports(List<AirportDTO> airportDTOList) {
+        cacheManager.getCache("airportCache").put("airports", airportDTOList);
 
-    @CacheEvict(value = "airport", key = "#airportCode")
-    public List<AirportDTO> pushAirports(List<AirportDTO> AirportDTO) {
-        // TODO
+        for (AirportDTO airport : airportDTOList) {
+            centralController.sendSseEvent("apiKey-client", airport, "airportUpdate");
+        }
+
+        return airportDTOList;
     }
-
 }
