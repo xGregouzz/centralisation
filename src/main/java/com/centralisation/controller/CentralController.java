@@ -2,7 +2,7 @@ package com.centralisation.controller;
 
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
-import com.centralisation.service.CentralServiceClient;
+import com.centralisation.service.CentralService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CentralController {
 
-    private final CentralServiceClient centralService;
+    private final CentralService centralService;
 
     /**
      * Récupère tous les vols
