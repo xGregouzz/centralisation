@@ -3,6 +3,8 @@ package com.centralisation.service;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +18,7 @@ public class CentralService {
      *
      * @return la liste des vols
      */
+    @Cacheable(value = "flight", key = "#id")
     public List<FlightDTO> getAllFlight() {
         // TODO
     }
@@ -25,6 +28,7 @@ public class CentralService {
      *
      * @return la liste des aéroports
      */
+    @Cacheable(value = "airport", key = "#airportCode")
     public List<AirportDTO> getAllAirport() {
         // TODO
     }
@@ -34,6 +38,8 @@ public class CentralService {
      *
      * @return la liste des aéroports
      */
+
+    @CacheEvict(value = "flight", key = "#id")
     public List<FlightDTO> pushFlight(List<FlightDTO> flightDTOList) {
         // TODO
     }
