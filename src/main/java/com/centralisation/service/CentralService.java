@@ -1,64 +1,66 @@
 package com.centralisation.service;
 
-import com.centralisation.controller.CentralController;
+import com.centralisation.config.ApiKeyLoader;
+import com.centralisation.exception.CentralisationException;
+import com.centralisation.model.SseEvent;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Sinks;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CentralService {
-
-    private final CentralController centralController;
-    private final CacheManager cacheManager;
-
-    @Value("${api.groupe1}")
-    private String apiKeyGroupe1;
-    @Value("${api.groupe2}")
-    private String apiKeyGroupe2;
-    @Value("${api.groupe3}")
-    private String apiKeyGroupe3;
-    @Value("${api.groupe4}")
-    private String apiKeyGroupe4;
+    private ApiKeyLoader apiKeyLoader;
+    private List<FlightDTO> cachedFlights;
+    private List<AirportDTO> cachedAirports;
 
     /**
      * Retourne la liste des vols
-     *
      * @return la liste des vols
      */
-    @Cacheable(value = "flightCache")
-    public List<FlightDTO> getAllFlights() {
-        return (List<FlightDTO>) cacheManager.getCache("flightCache").get("flights").get();
+    public List<FlightDTO> getAllFlights(String apiKey) throws CentralisationException {
+        String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
+        if (senderApiKeyString == null) {
+            throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
+        }
+        return cachedFlights;
     }
 
     /**
      * Retourne la liste des aéroports
-     *
      * @return la liste des aéroports
      */
-    @Cacheable(value = "airportCache")
-    public List<AirportDTO> getAllAirports() {
-        return (List<AirportDTO>) cacheManager.getCache("airportCache").get("airports").get();
+    public List<AirportDTO> getAllAirports(String apiKey) throws CentralisationException{
+        String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
+        if (senderApiKeyString == null) {
+            throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
+        }
+        return cachedAirports;
     }
 
     /**
      * Ajoute des vols mis à jour
-     *
      * @return la liste des vols
      */
-    @CacheEvict(value = "flightCache", allEntries = true)
-    public List<FlightDTO> pushFlights(List<FlightDTO> flightDTOList) {
-        cacheManager.getCache("flightCache").put("flights", flightDTOList);
+    public List<FlightDTO> pushFlights(List<FlightDTO> flightDTOList, Sinks.Many<SseEvent> sink, String apiKey) {
+        String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
+        if (senderApiKeyString == null) {
+            throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
+        }
+
+        for (FlightDTO flightDTO : flightDTOList) {
+            if (!cachedFlights.contains(flightDTO)) {
+                cachedFlights.add(flightDTO);
+            }
+        }
 
         for (FlightDTO flight : flightDTOList) {
-            centralController.sendSseEvent("apiKey-client", flight, "flightUpdate");
+            sendSseEvent(senderApiKeyString, flight, "flightUpdate", sink);
         }
 
         return flightDTOList;
@@ -66,17 +68,36 @@ public class CentralService {
 
     /**
      * Ajoute des aéroports mis à jour
-     *
      * @return la liste des aéroports
      */
-    @CacheEvict(value = "airportCache", allEntries = true)
-    public List<AirportDTO> pushAirports(List<AirportDTO> airportDTOList) {
-        cacheManager.getCache("airportCache").put("airports", airportDTOList);
+    public List<AirportDTO> pushAirports(List<AirportDTO> airportDTOList, Sinks.Many<SseEvent> sink, String apiKey) {
+        String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
+        if (senderApiKeyString == null) {
+            throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
+        }
+
+        for (AirportDTO airportDTO : airportDTOList) {
+            if (!cachedAirports.contains(airportDTO)) {
+                cachedAirports.add(airportDTO);
+            }
+        }
 
         for (AirportDTO airport : airportDTOList) {
-            centralController.sendSseEvent("apiKey-client", airport, "airportUpdate");
+            sendSseEvent(senderApiKeyString, airport, "airportUpdate", sink);
         }
 
         return airportDTOList;
+    }
+
+    /**
+     * Méthode pour envoyer un événement SSE
+     *
+     * @param apiKey    Clé d'authentification du client
+     * @param data      Données à envoyer
+     * @param eventType Type d'événement
+     */
+    public void sendSseEvent(String apiKey, Object data, String eventType, Sinks.Many<SseEvent> sink) {
+        SseEvent event = new SseEvent(apiKey, data, eventType);
+        sink.tryEmitNext(event);
     }
 }

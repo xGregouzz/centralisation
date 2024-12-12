@@ -1,9 +1,10 @@
 package com.centralisation.controller;
 
+import com.centralisation.exception.CentralisationException;
+import com.centralisation.model.SseEvent;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
 import com.centralisation.service.CentralService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -21,8 +22,6 @@ import java.util.List;
 public class CentralController {
 
     private final CentralService centralService;
-
-    // Gestion des événements SSE
     private final Sinks.Many<SseEvent> sink = Sinks.many().multicast().onBackpressureBuffer();
 
     /**
@@ -31,8 +30,8 @@ public class CentralController {
      * @return les vols disponibles
      */
     @GetMapping("/flights")
-    public List<FlightDTO> getAllFlight() {
-        return centralService.getAllFlights();
+    public List<FlightDTO> getAllFlight(@RequestHeader("API-Key") String apiKey) throws CentralisationException {
+        return centralService.getAllFlights(apiKey);
     }
 
     /**
@@ -41,8 +40,8 @@ public class CentralController {
      * @return les aéroports disponibles
      */
     @GetMapping("/airports")
-    public List<AirportDTO> getAllAirport() {
-        return centralService.getAllAirports();
+    public List<AirportDTO> getAllAirport(@RequestHeader("API-Key") String apiKey) throws CentralisationException{
+        return centralService.getAllAirports(apiKey);
     }
 
     /**
@@ -51,8 +50,8 @@ public class CentralController {
      * @return les vols mis à jour
      */
     @PostMapping("/flights")
-    public List<FlightDTO> pushFlight(@RequestBody List<FlightDTO> flightDTOList) {
-        return centralService.pushFlights(flightDTOList);
+    public List<FlightDTO> pushFlight(@RequestHeader("API-Key") String apiKey, @RequestBody List<FlightDTO> flightDTOList) throws CentralisationException {
+        return centralService.pushFlights(flightDTOList, sink, apiKey);
     }
 
     /**
@@ -61,8 +60,8 @@ public class CentralController {
      * @return les aéroports mis à jour
      */
     @PostMapping("/airports")
-    public List<AirportDTO> pushAirport(@RequestBody List<AirportDTO> airportDTOList) {
-        return centralService.pushAirports(airportDTOList);
+    public List<AirportDTO> pushAirport(@RequestHeader("API-Key") String apiKey, @RequestBody List<AirportDTO> airportDTOList) throws CentralisationException {
+        return centralService.pushAirports(airportDTOList, sink, apiKey);
     }
 
     /**
@@ -71,8 +70,8 @@ public class CentralController {
      * @param apiKey Clé d'authentification du client
      * @return Flux SSE des données
      */
-    @GetMapping(value = "/stream/{apiKey}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<Object>> streamData(@PathVariable String apiKey) {
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<Object>> streamData(@RequestHeader("API-Key") String apiKey) {
         // Filtrer les événements par API key et retourner les événements SSE
         return sink.asFlux()
                 .filter(event -> event.getApiKey().equals(apiKey))
@@ -83,27 +82,5 @@ public class CentralController {
                         .build())
                 .doOnSubscribe(subscription -> log.info("Client connecté : {}", apiKey))
                 .doOnCancel(() -> log.info("Client déconnecté : {}", apiKey));
-    }
-
-    /**
-     * Méthode pour envoyer un événement SSE
-     *
-     * @param apiKey    Clé d'authentification du client
-     * @param data      Données à envoyer
-     * @param eventType Type d'événement
-     */
-    public void sendSseEvent(String apiKey, Object data, String eventType) {
-        SseEvent event = new SseEvent(apiKey, data, eventType);
-        sink.tryEmitNext(event);
-    }
-
-    @Getter
-    @RequiredArgsConstructor
-    private static class SseEvent {
-        private final String apiKey;
-        private final Object data;
-        private final String type;
-        private final long id = System.currentTimeMillis();
-
     }
 }
