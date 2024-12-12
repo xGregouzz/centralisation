@@ -62,8 +62,8 @@ public class CentralController {
     }
 
     @PostMapping("/reservation")
-    public void createReservation(@RequestHeader("API-Key") String apiKey, @RequestBody ReservationDTO reservationDTOList) throws CentralisationException {
-        centralService.createReservation(reservationDTOList, apiKey, sink);
+    public void createReservation(@RequestHeader("API-Key") String apiKey, @RequestBody List<ReservationDTO> reservationDTOs) throws CentralisationException {
+        centralService.createReservation(reservationDTOs, apiKey, sink);
     }
 
     /**

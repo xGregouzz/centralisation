@@ -95,18 +95,21 @@ public class CentralService {
         return airportDTOList;
     }
 
-    public void createReservation(ReservationDTO reservationDTO, String apiKey, Sinks.Many<SseEvent> sink) {
+    public void createReservation(List<ReservationDTO> reservationDTOs, String apiKey, Sinks.Many<SseEvent> sink) {
         String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
         if (senderApiKeyString == null) {
             throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
         }
 
-        FlightDTO flight = cachedFlights.stream().filter(f -> f.getFlightId().equals(reservationDTO.getFlightId())).findFirst().orElse(null);
-        if (flight == null) {
-            throw new CentralisationException("Flight not found", HttpStatus.NOT_FOUND);
-        }
+        for (ReservationDTO reservationDTO : reservationDTOs) {
+            FlightDTO flight = cachedFlights.stream().filter(f -> f.getFlightId().equals(reservationDTO.getFlightId())).findFirst().orElse(null);
+            if (flight == null) {
+                throw new CentralisationException("Flight not found", HttpStatus.NOT_FOUND);
+            }
 
-        sendSseEvent(apiKeyLoader.getApiKeyByGroupeId(flight.getGroupId()), reservationDTO, "reservationUpdate", sink);
+            sendSseEvent(senderApiKeyString, reservationDTO, "reservationCreate", sink);
+            sendSseEvent(apiKeyLoader.getApiKeyByGroupeId(flight.getGroupId()), reservationDTO, "reservationToCreate", sink);
+        }
     }
 
 
