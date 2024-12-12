@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CentralService {
-    private ApiKeyLoader apiKeyLoader;
+    private final ApiKeyLoader apiKeyLoader;
     private List<FlightDTO> cachedFlights;
     private List<AirportDTO> cachedAirports;
 

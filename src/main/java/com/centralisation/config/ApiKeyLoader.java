@@ -1,9 +1,11 @@
 package com.centralisation.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class ApiKeyLoader {
     @Value("${api.groupe1}")
     private String apiKeyGroupe1;
