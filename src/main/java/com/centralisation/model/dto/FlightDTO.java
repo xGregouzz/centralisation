@@ -15,5 +15,5 @@ public class FlightDTO {
     private String arrivalAirportCodeDTO;
     private double price;
     private int capacity;
-    private int groupId;
+    private long groupId;
 }

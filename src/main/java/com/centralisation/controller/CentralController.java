@@ -4,6 +4,7 @@ import com.centralisation.exception.CentralisationException;
 import com.centralisation.model.SseEvent;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
+import com.centralisation.model.dto.ReservationDTO;
 import com.centralisation.service.CentralService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,6 @@ public class CentralController {
 
     /**
      * Récupère tous les vols
-     *
      * @return les vols disponibles
      */
     @GetMapping("/flights")
@@ -36,7 +36,6 @@ public class CentralController {
 
     /**
      * Récupère tous les aéroports
-     *
      * @return les aéroports disponibles
      */
     @GetMapping("/airports")
@@ -46,7 +45,6 @@ public class CentralController {
 
     /**
      * Ajoute des vols mis à jour
-     *
      * @return les vols mis à jour
      */
     @PostMapping("/flights")
@@ -56,7 +54,6 @@ public class CentralController {
 
     /**
      * Ajoute des aéroports mis à jour
-     *
      * @return les aéroports mis à jour
      */
     @PostMapping("/airports")
@@ -64,9 +61,13 @@ public class CentralController {
         return centralService.pushAirports(airportDTOList, sink, apiKey);
     }
 
+    @PostMapping("/reservation")
+    public void createReservation(@RequestHeader("API-Key") String apiKey, @RequestBody ReservationDTO reservationDTOList) throws CentralisationException {
+        centralService.createReservation(reservationDTOList, apiKey, sink);
+    }
+
     /**
      * Flux SSE pour envoyer les données en temps réel
-     *
      * @param apiKey Clé d'authentification du client
      * @return Flux SSE des données
      */

@@ -5,6 +5,7 @@ import com.centralisation.exception.CentralisationException;
 import com.centralisation.model.SseEvent;
 import com.centralisation.model.dto.AirportDTO;
 import com.centralisation.model.dto.FlightDTO;
+import com.centralisation.model.dto.ReservationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -88,6 +89,21 @@ public class CentralService {
 
         return airportDTOList;
     }
+
+    public void createReservation(ReservationDTO reservationDTO, String apiKey, Sinks.Many<SseEvent> sink) {
+        String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
+        if (senderApiKeyString == null) {
+            throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
+        }
+
+        FlightDTO flight = cachedFlights.stream().filter(f -> f.getFlightId().equals(reservationDTO.getFlightId())).findFirst().orElse(null);
+        if (flight == null) {
+            throw new CentralisationException("Flight not found", HttpStatus.NOT_FOUND);
+        }
+
+        sendSseEvent(apiKeyLoader.getApiKeyByGroupeId(flight.getGroupId()), reservationDTO, "reservationUpdate", sink);
+    }
+
 
     /**
      * Méthode pour envoyer un événement SSE
