@@ -11,17 +11,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Sinks;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CentralService {
     private final ApiKeyLoader apiKeyLoader;
-    private List<FlightDTO> cachedFlights;
-    private List<AirportDTO> cachedAirports;
+    private List<FlightDTO> cachedFlights = new ArrayList<>();
+    private List<AirportDTO> cachedAirports = new ArrayList<>();
 
     /**
      * Retourne la liste des vols
+     *
      * @return la liste des vols
      */
     public List<FlightDTO> getAllFlights(String apiKey) throws CentralisationException {
@@ -34,9 +36,10 @@ public class CentralService {
 
     /**
      * Retourne la liste des aéroports
+     *
      * @return la liste des aéroports
      */
-    public List<AirportDTO> getAllAirports(String apiKey) throws CentralisationException{
+    public List<AirportDTO> getAllAirports(String apiKey) throws CentralisationException {
         String senderApiKeyString = apiKeyLoader.getApiKeyFromString(apiKey);
         if (senderApiKeyString == null) {
             throw new CentralisationException("Invalid API key", HttpStatus.BAD_REQUEST);
@@ -46,6 +49,7 @@ public class CentralService {
 
     /**
      * Ajoute des vols mis à jour
+     *
      * @return la liste des vols
      */
     public List<FlightDTO> pushFlights(List<FlightDTO> flightDTOList, Sinks.Many<SseEvent> sink, String apiKey) {
@@ -69,6 +73,7 @@ public class CentralService {
 
     /**
      * Ajoute des aéroports mis à jour
+     *
      * @return la liste des aéroports
      */
     public List<AirportDTO> pushAirports(List<AirportDTO> airportDTOList, Sinks.Many<SseEvent> sink, String apiKey) {
