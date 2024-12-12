@@ -22,4 +22,14 @@ public class ApiKeyLoader {
             return null;
         }
     }
+
+    public String getApiKeyByGroupeId(Long groupeId) {
+        return switch (groupeId.intValue()) {
+            case 1 -> apiKeyGroupe1;
+            case 2 -> apiKeyGroupe2;
+            case 3 -> apiKeyGroupe3;
+            case 4 -> apiKeyGroupe4;
+            default -> null;
+        };
+    }
 }
